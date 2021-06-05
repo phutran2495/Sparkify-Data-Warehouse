@@ -56,6 +56,13 @@ from buckets and copy them into staging tables inside AWS Redshift.
 ~~~~
 --------------------------------------------
 
+### Steps to execute this project
+1. Go to dwh.cfg to fill in your [AWS] Key and Secret
+2. run create_redshift_iam jupyter notebook and follow the important section at the bottom of the notebook.
+3. run "python etl.py" 
+4. to destroy the infrastructure after finish reviewing , run "python destroy_redshift_iam.py"
+
+
 ### Data Warehouse Schema Definition
 This is the schema of the database
 
@@ -172,106 +179,7 @@ There are 2 main steps:
 1. Ingest data from s3 public buckets into staging tables:
 2. Insert record into a star schema from staging tables
 
-#### Insert data into staging tables
 
-<b>Insert into staging events:</b>
-~~~~
- staging_events_copy = ("""
-    COPY staging_events 
-        FROM {} 
-        iam_role {} 
-        region {}
-        FORMAT AS JSON {} 
-        timeformat 'epochmillisecs'
-        TRUNCATECOLUMNS BLANKSASNULL EMPTYASNULL;
-""").format(LOG_DATA, ARN, REGION, LOG_JSON_PATH)
-~~~~
-
-<b>Insert into staging songs:</b>
-~~~~
-staging_songs_copy = ("""
-    COPY staging_songs 
-        FROM {}
-        iam_role {}
-        region {}
-        FORMAT AS JSON 'auto' 
-        TRUNCATECOLUMNS BLANKSASNULL EMPTYASNULL;
-""").format(SONG_DATA, ARN, REGION)
-~~~~
-
-#### Insert data into star schema from staging tables
-
-<b>Insert Dimensions:</b>
-~~~~
-
-user_table_insert = ("""
-    INSERT INTO users (user_id, first_name, last_name, gender, level)
-        SELECT DISTINCT se.userId, 
-                        se.firstName, 
-                        se.lastName, 
-                        se.gender, 
-                        se.level
-        FROM staging_events se
-        WHERE se.userId IS NOT NULL;
-""")
-
-
-song_table_insert = ("""
-    INSERT INTO songs (song_id, title, artist_id, year, duration) 
-        SELECT DISTINCT ss.song_id, 
-                        ss.title, 
-                        ss.artist_id, 
-                        ss.year, 
-                        ss.duration
-        FROM staging_songs ss
-        WHERE ss.song_id IS NOT NULL;
-""")
-
-artist_table_insert = ("""
-    INSERT INTO artists (artist_id, name, location, latitude, logitude)
-        SELECT DISTINCT ss.artist_id, 
-                        ss.artist_name, 
-                        ss.artist_location,
-                        ss.artist_latitude,
-                        ss.artist_longitude
-        FROM staging_songs ss
-        WHERE ss.artist_id IS NOT NULL;
-""")
-
-time_table_insert = ("""
-    INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-        SELECT DISTINCT  se.ts,
-                        EXTRACT(hour from se.ts),
-                        EXTRACT(day from se.ts),
-                        EXTRACT(week from se.ts),
-                        EXTRACT(month from se.ts),
-                        EXTRACT(year from se.ts),
-                        EXTRACT(weekday from se.ts)
-        FROM staging_events se
-        WHERE se.page = 'NextSong';
-""")
-~~~~
-
-<b>Insert Facts table:</b>
-~~~~
-songplay_table_insert = ("""
-    INSERT INTO songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent) 
-        SELECT DISTINCT se.ts, 
-                        se.userId, 
-                        se.level, 
-                        ss.song_id, 
-                        ss.artist_id, 
-                        se.sessionId, 
-                        se.location, 
-                        se.userAgent
-        FROM staging_events se 
-        INNER JOIN staging_songs ss 
-            ON se.song = ss.title AND se.artist = ss.artist_name
-        WHERE se.page = 'NextSong';
-""")
-~~~~
-
---------------------------------------------
 
 #### Project structure
 
