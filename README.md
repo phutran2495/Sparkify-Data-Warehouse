@@ -47,7 +47,7 @@ from buckets and copy them into staging tables inside AWS Redshift.
 
 <b>Log Dataset structure:</b>
 ![Log Dataset](./images/log_dataset.jpg)
-
+https://video.udacity-data.com/topher/2019/February/5c6c3ce5_log-data/log-data.png
 <b>Song dataset structure:</b>
 ~~~~
 {"num_songs": 1, "artist_id": "ARJIE2Y1187B994AB7", "artist_latitude": null, "artist_longitude": null
